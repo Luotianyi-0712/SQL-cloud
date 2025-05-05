@@ -23,6 +23,59 @@ document.addEventListener('DOMContentLoaded', function() {
   const expirySlider = document.getElementById('expirySlider');
   const expiryHours = document.getElementById('expiryHours');
   const expiryDisplay = document.getElementById('expiryDisplay');
+  const adminKeyInput = document.getElementById('adminKey');
+  
+  // 设置滑块范围
+  expirySlider.min = 0;  // 0 表示永久
+  expirySlider.max = 720;  // 最大 30 天
+  expirySlider.value = 24; // 默认 24 小时
+  expiryHours.value = 24;
+  
+  // 过期时间滑块
+  expirySlider.addEventListener('input', function() {
+    const hours = parseInt(this.value);
+    expiryHours.value = hours;
+    updateExpiryText(hours);
+  });
+  
+  // 手动输入过期时间
+  expiryHours.addEventListener('change', function() {
+    let hours = parseInt(this.value);
+    
+    // 确保值在有效范围内
+    if (isNaN(hours) || hours < 0) {
+      hours = 0;
+    } else if (hours > 720 && hours !== 0) {
+      hours = 720;
+    }
+    
+    this.value = hours;
+    expirySlider.value = hours;
+    updateExpiryText(hours);
+  });
+  
+  function updateExpiryText(hours) {
+    if (hours === 0) {
+      expiryDisplay.textContent = "永久存储";
+      return;
+    }
+    
+    let text = '';
+    if (hours < 24) {
+      text = `${hours} 小时`;
+    } else {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      text = `${days} 天`;
+      if (remainingHours > 0) {
+        text += ` ${remainingHours} 小时`;
+      }
+    }
+    expiryDisplay.textContent = text;
+  }
+  
+  // 初始化过期时间显示
+  updateExpiryText(parseInt(expiryHours.value));
   
   // 文件拖放功能
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -58,347 +111,255 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (files.length > 0) {
       fileInput.files = files;
-      updateFileNameDisplay(files[0].name);
+      handleFileSelect();
     }
   }
   
   // 文件选择事件
-  fileInput.addEventListener('change', function() {
-    if (this.files.length > 0) {
-      updateFileNameDisplay(this.files[0].name);
+  fileInput.addEventListener('change', handleFileSelect);
+  
+  function handleFileSelect() {
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      fileNameDisplay.textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
+      fileDropArea.classList.add('file-selected');
     } else {
-      fileNameDisplay.classList.add('hidden');
-    }
-  });
-  
-  function updateFileNameDisplay(fileName) {
-    fileNameDisplay.textContent = fileName;
-    fileNameDisplay.classList.remove('hidden');
-    
-    // 根据文件类型显示不同图标
-    const fileExtension = fileName.split('.').pop().toLowerCase();
-    let iconClass = 'fas fa-file';
-    
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-image';
-    } else if (['doc', 'docx', 'odt', 'rtf'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-word';
-    } else if (['xls', 'xlsx', 'ods', 'csv'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-excel';
-    } else if (['ppt', 'pptx', 'odp'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-powerpoint';
-    } else if (['pdf'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-pdf';
-    } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-archive';
-    } else if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-audio';
-    } else if (['mp4', 'avi', 'mov', 'wmv', 'mkv', 'webm'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-video';
-    } else if (['html', 'css', 'js', 'php', 'py', 'java', 'c', 'cpp', 'cs', 'rb'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-code';
-    } else if (['txt', 'md'].includes(fileExtension)) {
-      iconClass = 'fas fa-file-alt';
-    }
-    
-    fileNameDisplay.innerHTML = `<i class="${iconClass}"></i> ${fileName}`;
-  }
-  
-// 修改过期时间滑块范围
-expirySlider.min = 0;  // 0 表示永久
-expirySlider.max = 8760;  // 最大 1 年
-
-// 修改 updateExpiryText 函数
-function updateExpiryText(hours) {
-  if (hours === 0) {
-    expiryDisplay.textContent = "永久存储";
-    return;
-  }
-  
-  let text = '';
-  if (hours < 24) {
-    text = `${hours} 小时`;
-  } else {
-    const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
-    text = `${days} 天`;
-    if (remainingHours > 0) {
-      text += ` ${remainingHours} 小时`;
+      fileNameDisplay.textContent = '拖放文件到这里或点击选择';
+      fileDropArea.classList.remove('file-selected');
     }
   }
-  expiryDisplay.textContent = text;
-}
-
   
-  // 初始化过期时间显示
-  updateExpiryText(parseInt(expiryHours.value));
-  
-  // 上传表单提交
-  uploadForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    if (!fileInput.files[0]) {
-      showToast('请选择要上传的文件', 'error');
-      return;
-    }
-    
-    const formData = new FormData(this);
-    
-    // 显示进度条
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
-    
-    // 禁用提交按钮
-    const submitBtn = this.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上传中...';
-    
-    // 发送请求
-    const xhr = new XMLHttpRequest();
-    
-    xhr.upload.addEventListener('progress', function(e) {
-      if (e.lengthComputable) {
-        const percentComplete = Math.round((e.loaded / e.total) * 100);
-        progressBar.style.width = percentComplete + '%';
-        progressText.textContent = percentComplete + '%';
-      }
-    });
-    
-    xhr.addEventListener('load', function() {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 上传';
-      
-      if (xhr.status === 200) {
-        const data = JSON.parse(xhr.responseText);
-        
-        // 显示上传结果
-        const result = `
-          <div class="success-animation">
-            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-              <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-              <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-            </svg>
-          </div>
-          <h3>文件上传成功！</h3>
-          <div class="info-card">
-            <div class="info-item">
-              <span class="info-label">访问码:</span>
-              <div class="code-container">
-                <span class="access-code">${data.accessCode}</span>
-                <button class="copy-btn" data-clipboard-text="${data.accessCode}">
-                  <i class="fas fa-copy"></i>
-                </button>
-              </div>
-            </div>
-            <div class="info-item">
-              <span class="info-label">过期时间:</span>
-              <span>${new Date(data.expiryDate).toLocaleString()}</span>
-            </div>
-          </div>
-        `;
-        
-        uploadResult.innerHTML = result;
-        uploadResult.classList.remove('hidden');
-        
-        // 重新初始化剪贴板
-        new ClipboardJS('.copy-btn');
-        
-        // 重置表单
-        uploadForm.reset();
-        fileNameDisplay.classList.add('hidden');
-        
-        // 滚动到结果区域
-        uploadResult.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        let errorMessage = '上传失败';
-        try {
-          const response = JSON.parse(xhr.responseText);
-          errorMessage = response.message || errorMessage;
-        } catch (e) {
-          console.error('解析错误响应失败', e);
-        }
-        showToast(errorMessage, 'error');
-      }
-      
-      // 隐藏进度条
-      setTimeout(() => {
-        progressContainer.classList.add('hidden');
-      }, 500);
-    });
-    
-    xhr.addEventListener('error', function() {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 上传';
-      progressContainer.classList.add('hidden');
-      showToast('网络错误，请稍后重试', 'error');
-    });
-    
-    xhr.open('POST', '/api/upload');
-    xhr.send(formData);
-  });
-  
-  // 下载表单提交
-  downloadForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const accessCode = document.getElementById('accessCode').value.trim();
-    
-    if (!accessCode) {
-      showToast('请输入访问码', 'error');
-      return;
-    }
-    
-    // 禁用提交按钮
-    const submitBtn = this.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 查询中...';
-    
-    // 清空之前的结果
-    fileInfo.classList.add('hidden');
-    fileInfo.innerHTML = '';
-    
-    // 发送请求
-    fetch(`/api/file-info/${accessCode}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('文件不存在或已过期');
-        }
-        return response.json();
-      })
-      .then(data => {
-        // 根据文件类型选择图标
-        const fileExtension = data.filename.split('.').pop().toLowerCase();
-        let fileIcon = 'fas fa-file';
-        
-        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-image';
-        } else if (['doc', 'docx', 'odt', 'rtf'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-word';
-        } else if (['xls', 'xlsx', 'ods', 'csv'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-excel';
-        } else if (['ppt', 'pptx', 'odp'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-powerpoint';
-        } else if (['pdf'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-pdf';
-        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-archive';
-        } else if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-audio';
-        } else if (['mp4', 'avi', 'mov', 'wmv', 'mkv', 'webm'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-video';
-        } else if (['html', 'css', 'js', 'php', 'py', 'java', 'c', 'cpp', 'cs', 'rb'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-code';
-        } else if (['txt', 'md'].includes(fileExtension)) {
-          fileIcon = 'fas fa-file-alt';
-        }
-        
-        // 格式化文件大小
-        const filesize = formatFileSize(data.size);
-        
-        // 显示文件信息
-        const result = `
-          <div class="file-info-container">
-            <div class="file-icon">
-              <i class="${fileIcon}"></i>
-            </div>
-            <div class="file-details">
-              <h3>${data.filename}</h3>
-              <div class="file-meta">
-                <div class="meta-item">
-                  <i class="fas fa-weight-hanging"></i>
-                  <span>${filesize}</span>
-                </div>
-                <div class="meta-item">
-                  <i class="fas fa-file-alt"></i>
-                  <span>${data.contentType}</span>
-                </div>
-                <div class="meta-item">
-                  <i class="fas fa-calendar-plus"></i>
-                  <span>${new Date(data.createdAt).toLocaleString()}</span>
-                </div>
-                <div class="meta-item">
-                  <i class="fas fa-calendar-times"></i>
-                  <span>${new Date(data.expiresAt).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <a href="/api/file/${accessCode}" class="download-btn">
-            <i class="fas fa-download"></i> 下载文件
-          </a>
-        `;
-        
-        fileInfo.innerHTML = result;
-        fileInfo.classList.remove('hidden');
-        
-        // 滚动到结果区域
-        fileInfo.scrollIntoView({ behavior: 'smooth' });
-      })
-      .catch(error => {
-        showToast(error.message, 'error');
-      })
-      .finally(() => {
-        // 恢复提交按钮
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-search"></i> 查询文件';
-      });
-  });
-  
-  // 剪贴板功能
-  clipboard.on('success', function(e) {
-    showToast('访问码已复制到剪贴板！', 'success');
-    e.clearSelection();
-  });
-  
-  clipboard.on('error', function() {
-    showToast('复制失败，请手动复制', 'error');
-  });
-  
-  // 辅助函数
+  // 格式化文件大小
   function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return '0 Bytes';
     
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
   
-  function showToast(message, type = 'info') {
-    // 移除现有的toast
-    const existingToasts = document.querySelectorAll('.toast');
-    existingToasts.forEach(toast => {
-      document.body.removeChild(toast);
+  // 格式化日期时间
+  function formatDateTime(dateString) {
+    if (!dateString) return '永久有效';
+    
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
     });
+  }
+  
+  // 上传表单提交
+  uploadForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
     
-    // 创建新的toast
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+    if (!fileInput.files.length) {
+      showNotification('请选择要上传的文件', 'error');
+      return;
+    }
     
-    let icon = 'info-circle';
-    if (type === 'success') icon = 'check-circle';
-    if (type === 'error') icon = 'exclamation-circle';
-    if (type === 'warning') icon = 'exclamation-triangle';
+    if (!adminKeyInput.value.trim()) {
+      showNotification('请输入管理员密钥', 'error');
+      return;
+    }
     
-    toast.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('expiryHours', expiryHours.value);
+    formData.append('adminKey', adminKeyInput.value.trim());
     
-    document.body.appendChild(toast);
+    // 显示进度条
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = '0%';
+    uploadResult.style.display = 'none';
     
-    // 显示toast
+    try {
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+          const percentComplete = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = percentComplete + '%';
+          progressText.textContent = percentComplete + '%';
+        }
+      });
+      
+      xhr.addEventListener('load', function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const response = JSON.parse(xhr.responseText);
+          
+          // 显示上传结果
+          uploadResult.style.display = 'block';
+          document.getElementById('accessCode').textContent = response.accessCode;
+          document.getElementById('accessLink').value = `${window.location.origin}/download/${response.accessCode}`;
+          document.getElementById('expiryDate').textContent = formatDateTime(response.expiryDate);
+          
+          // 重置表单
+          uploadForm.reset();
+          fileNameDisplay.textContent = '拖放文件到这里或点击选择';
+          fileDropArea.classList.remove('file-selected');
+          
+          showNotification('文件上传成功！', 'success');
+        } else {
+          let errorMessage = '上传失败';
+          try {
+            const errorResponse = JSON.parse(xhr.responseText);
+            errorMessage = errorResponse.message || errorMessage;
+          } catch (e) {
+            console.error('Error parsing error response:', e);
+          }
+          showNotification(errorMessage, 'error');
+        }
+        
+        // 隐藏进度条
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+        }, 1000);
+      });
+      
+      xhr.addEventListener('error', function() {
+        showNotification('网络错误，上传失败', 'error');
+        progressContainer.style.display = 'none';
+      });
+      
+      xhr.addEventListener('abort', function() {
+        showNotification('上传已取消', 'warning');
+        progressContainer.style.display = 'none';
+      });
+      
+      xhr.open('POST', '/api/upload');
+      xhr.send(formData);
+    } catch (error) {
+      console.error('Upload error:', error);
+      showNotification('上传过程中发生错误', 'error');
+      progressContainer.style.display = 'none';
+    }
+  });
+  
+  // 下载表单提交
+  downloadForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const accessCode = document.getElementById('accessCodeInput').value.trim();
+    
+    if (!accessCode) {
+      showNotification('请输入访问码', 'error');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/files/${accessCode}`);
+      
+      if (response.ok) {
+        const fileData = await response.json();
+        
+        // 显示文件信息
+        fileInfo.style.display = 'block';
+        document.getElementById('fileName').textContent = fileData.filename;
+        document.getElementById('fileSize').textContent = formatFileSize(fileData.filesize);
+        document.getElementById('fileExpiry').textContent = formatDateTime(fileData.expires_at);
+        document.getElementById('downloadLink').href = `/api/download/${accessCode}`;
+        
+        showNotification('文件信息获取成功！', 'success');
+      } else {
+        let errorMessage = '获取文件信息失败';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        showNotification(errorMessage, 'error');
+      }
+    } catch (error) {
+      console.error('Download info error:', error);
+      showNotification('获取文件信息时发生错误', 'error');
+    }
+  });
+  
+  // 剪贴板成功事件
+  clipboard.on('success', function(e) {
+    showNotification('链接已复制到剪贴板！', 'success');
+    e.clearSelection();
+  });
+  
+  // 剪贴板错误事件
+  clipboard.on('error', function(e) {
+    showNotification('复制失败，请手动复制', 'error');
+  });
+  
+  // 通知函数
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // 显示通知
     setTimeout(() => {
-      toast.classList.add('show');
+      notification.classList.add('show');
     }, 10);
     
-    // 自动隐藏toast
+    // 3秒后隐藏通知
     setTimeout(() => {
-      toast.classList.remove('show');
-      setTimeout(() => {
-        if (document.body.contains(toast)) {
-          document.body.removeChild(toast);
+      notification.classList.remove('show');
+      
+      // 动画结束后移除元素
+      notification.addEventListener('transitionend', function() {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
         }
-      }, 300);
+      });
     }, 3000);
+  }
+  
+  // 检查URL中是否有访问码参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const accessCodeParam = urlParams.get('code');
+  
+  if (accessCodeParam) {
+    document.getElementById('accessCodeInput').value = accessCodeParam;
+    // 自动触发下载表单提交
+    downloadForm.dispatchEvent(new Event('submit'));
+    
+    // 更新URL，移除参数
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+  }
+  
+  // 切换主题
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function() {
+      document.body.classList.toggle('dark-theme');
+      
+      // 保存主题偏好到本地存储
+      const isDarkTheme = document.body.classList.contains('dark-theme');
+      localStorage.setItem('darkTheme', isDarkTheme);
+      
+      // 更新图标
+      this.innerHTML = isDarkTheme ? 
+        '<i class="fas fa-sun"></i>' : 
+        '<i class="fas fa-moon"></i>';
+    });
+    
+    // 加载保存的主题偏好
+    const savedTheme = localStorage.getItem('darkTheme');
+    if (savedTheme === 'true') {
+      document.body.classList.add('dark-theme');
+      themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    } else {
+      themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    }
   }
 });

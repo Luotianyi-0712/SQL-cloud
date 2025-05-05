@@ -36,11 +36,12 @@
         <div class="form-group">
           <label for="expiryHours">过期时间:</label>
           <div class="slider-container">
-            <input type="range" id="expirySlider" class="range-slider" min="1" max="168" value="24">
+            <input type="range" id="expirySlider" class="range-slider" min="0" max="720" value="24">
             <div id="expiryDisplay" class="expiry-display">24 小时</div>
           </div>
-          <input type="number" id="expiryHours" name="expiryHours" value="24" min="1" max="168" hidden>
-        </div>
+          <input type="number" id="expiryHours" name="expiryHours" value="24" min="0" max="720" hidden>
+          <small class="form-text">0 = 永久存储，最大 720 小时 (30 天)</small>
+        </div>        
         
         <button type="submit"><i class="fas fa-paper-plane"></i> 上传</button>
       </form>

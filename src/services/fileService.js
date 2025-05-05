@@ -8,11 +8,16 @@ async function storeFile(filename, contentType, data, expiryHours) {
   try {
     await client.query('BEGIN');
     
+    console.log(`Processing file storage: ${filename}, expiry hours: ${expiryHours}`);
+    
     // 计算过期时间，如果 expiryHours 为 0，则设置为 null（永不过期）
     let expiryDate = null;
     if (expiryHours > 0) {
       expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + expiryHours);
+      console.log(`File will expire at: ${expiryDate}`);
+    } else {
+      console.log('File set for permanent storage (no expiry)');
     }
     
     // 存储文件
@@ -22,9 +27,11 @@ async function storeFile(filename, contentType, data, expiryHours) {
     );
     
     const fileId = fileResult.rows[0].id;
+    console.log(`File stored with ID: ${fileId}`);
     
     // 生成访问码
     const accessCode = await generateAccessCode();
+    console.log(`Generated access code: ${accessCode}`);
     
     // 存储访问码
     await client.query(
@@ -33,12 +40,14 @@ async function storeFile(filename, contentType, data, expiryHours) {
     );
     
     await client.query('COMMIT');
+    console.log('Transaction committed successfully');
     
     return {
       accessCode,
       expiryDate
     };
   } catch (error) {
+    console.error('Error in storeFile:', error);
     await client.query('ROLLBACK');
     throw error;
   } finally {

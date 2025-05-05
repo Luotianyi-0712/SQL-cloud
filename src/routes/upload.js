@@ -1,4 +1,3 @@
-// upload.js 修改
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -9,10 +8,10 @@ const { storeFile } = require('../services/fileService');
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 * 1024 } // 修改为 10GB 限制
+  limits: { fileSize: 500 * 1024 * 1024 } // 先设置为 500MB 限制，确认功能正常后再增加
 });
 
-// 上传文件 - 不再使用中间件，而是在路由处理函数中验证
+// 上传文件 - 在路由处理函数中验证
 router.post('/', upload.single('file'), async (req, res, next) => {
   try {
     // 从表单数据中获取 adminKey
@@ -34,15 +33,22 @@ router.post('/', upload.single('file'), async (req, res, next) => {
     }
     
     const { originalname, mimetype, buffer } = req.file;
-    const expiryHours = parseInt(req.body.expiryHours || '24', 10);
+    let expiryHours = parseInt(req.body.expiryHours || '24', 10);
+    
+    // 确保 expiryHours 是有效值
+    if (isNaN(expiryHours)) {
+      expiryHours = 24; // 默认为24小时
+    }
     
     // 允许永久存储（0表示永不过期）
-    if (isNaN(expiryHours) || (expiryHours < 0 && expiryHours !== 0) || expiryHours > 8760) { // 最大1年，0表示永久
+    if (expiryHours < 0 || (expiryHours > 720 && expiryHours !== 0)) { // 最大30天，0表示永久
       return res.status(400).json({
         error: 'BadRequest',
-        message: 'Expiry time must be between 0 and 8760 hours (1 year), or 0 for permanent storage'
+        message: 'Expiry time must be between 0 and 720 hours (30 days), or 0 for permanent storage'
       });
     }
+    
+    console.log(`Uploading file: ${originalname}, size: ${buffer.length}, expiry: ${expiryHours}`);
     
     const result = await storeFile(originalname, mimetype, buffer, expiryHours);
     
@@ -52,6 +58,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
       expiryDate: result.expiryDate
     });
   } catch (error) {
+    console.error('Upload error:', error);
     next(error);
   }
 });
