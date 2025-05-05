@@ -8,7 +8,7 @@ const { storeFile } = require('../services/fileService');
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
-  limits: { fileSize: 500 * 1024 * 1024 } // 先设置为 500MB 限制，确认功能正常后再增加
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 } // 上传限制，确认功能正常后再增加
 });
 
 // 上传文件 - 在路由处理函数中验证
