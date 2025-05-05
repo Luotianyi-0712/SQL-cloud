@@ -1,18 +1,21 @@
 const db = require('../db');
 const { generateAccessCode } = require('../utils/codeGenerator');
 
-// Store file and return access code
+// fileService.js 修改 storeFile 函数
 async function storeFile(filename, contentType, data, expiryHours) {
   const client = await db.connect();
   
   try {
     await client.query('BEGIN');
     
-    // Calculate expiry time
-    const expiryDate = new Date();
-    expiryDate.setHours(expiryDate.getHours() + expiryHours);
+    // 计算过期时间，如果 expiryHours 为 0，则设置为 null（永不过期）
+    let expiryDate = null;
+    if (expiryHours > 0) {
+      expiryDate = new Date();
+      expiryDate.setHours(expiryDate.getHours() + expiryHours);
+    }
     
-    // Store file
+    // 存储文件
     const fileResult = await client.query(
       'INSERT INTO files (filename, content_type, filesize, data, expires_at) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [filename, contentType, data.length, data, expiryDate]
@@ -20,10 +23,10 @@ async function storeFile(filename, contentType, data, expiryHours) {
     
     const fileId = fileResult.rows[0].id;
     
-    // Generate access code
+    // 生成访问码
     const accessCode = await generateAccessCode();
     
-    // Store access code
+    // 存储访问码
     await client.query(
       'INSERT INTO access_codes (file_id, access_code) VALUES ($1, $2)',
       [fileId, accessCode]
@@ -77,10 +80,10 @@ async function getFileInfoByAccessCode(accessCode) {
   return result.rows[0];
 }
 
-// Delete expired files
+// 修改 deleteExpiredFiles 函数
 async function deleteExpiredFiles() {
   const result = await db.query(
-    'DELETE FROM files WHERE expires_at < NOW() RETURNING id',
+    'DELETE FROM files WHERE expires_at < NOW() AND expires_at IS NOT NULL RETURNING id',
   );
   
   return result.rows.length;

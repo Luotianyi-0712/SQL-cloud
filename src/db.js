@@ -8,24 +8,25 @@ const initDatabase = async () => {
   try {
     const client = await pool.connect();
 
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS files (
-        id SERIAL PRIMARY KEY,
-        filename TEXT NOT NULL,
-        content_type TEXT NOT NULL,
-        filesize BIGINT NOT NULL,
-        data BYTEA NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        expires_at TIMESTAMP NOT NULL
-      );
-      
-      CREATE TABLE IF NOT EXISTS access_codes (
-        id SERIAL PRIMARY KEY,
-        file_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
-        access_code TEXT UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+  // db.js 修改表结构
+await client.query(`
+  CREATE TABLE IF NOT EXISTS files (
+    id SERIAL PRIMARY KEY,
+    filename TEXT NOT NULL,
+    content_type TEXT NOT NULL,
+    filesize BIGINT NOT NULL,
+    data BYTEA NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NULL  -- 修改为可为 null
+  );
+  
+  CREATE TABLE IF NOT EXISTS access_codes (
+    id SERIAL PRIMARY KEY,
+    file_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
+    access_code TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`);
 
     console.log('Database initialized successfully');
     client.release();

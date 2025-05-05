@@ -1,19 +1,31 @@
+// upload.js 修改
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const adminAuthMiddleware = require('../middleware/adminAuth');
+const { validateAdminKey } = require('../utils/auth');
 const { storeFile } = require('../services/fileService');
 
-// Configure multer for memory storage
+// 配置 multer 用于内存存储
 const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 } // 修改为 10GB 限制
 });
 
-// Upload file - requires admin authentication
-router.post('/', adminAuthMiddleware, upload.single('file'), async (req, res, next) => {
+// 上传文件 - 不再使用中间件，而是在路由处理函数中验证
+router.post('/', upload.single('file'), async (req, res, next) => {
   try {
+    // 从表单数据中获取 adminKey
+    const adminKey = req.body.adminKey;
+    
+    // 验证 adminKey
+    if (!adminKey || !validateAdminKey(adminKey)) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Admin key is required and must be valid'
+      });
+    }
+    
     if (!req.file) {
       return res.status(400).json({
         error: 'BadRequest',
@@ -24,10 +36,11 @@ router.post('/', adminAuthMiddleware, upload.single('file'), async (req, res, ne
     const { originalname, mimetype, buffer } = req.file;
     const expiryHours = parseInt(req.body.expiryHours || '24', 10);
     
-    if (isNaN(expiryHours) || expiryHours < 1 || expiryHours > 168) {
+    // 允许永久存储（0表示永不过期）
+    if (isNaN(expiryHours) || (expiryHours < 0 && expiryHours !== 0) || expiryHours > 8760) { // 最大1年，0表示永久
       return res.status(400).json({
         error: 'BadRequest',
-        message: 'Expiry time must be between 1 and 168 hours (7 days)'
+        message: 'Expiry time must be between 0 and 8760 hours (1 year), or 0 for permanent storage'
       });
     }
     
@@ -41,13 +54,6 @@ router.post('/', adminAuthMiddleware, upload.single('file'), async (req, res, ne
   } catch (error) {
     next(error);
   }
-});
-
-// Custom access code (optional feature)
-router.post('/custom-code', adminAuthMiddleware, upload.single('file'), async (req, res, next) => {
-  // Implementation for custom access codes
-  // This is an additional feature that could be implemented
-  res.status(501).json({ message: 'Not implemented' });
 });
 
 module.exports = router;

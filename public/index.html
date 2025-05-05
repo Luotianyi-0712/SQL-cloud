@@ -1,52 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Temporary Cloud Drive</title>
+  <title>临时云存储</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Temporary Cloud Drive</h1>
+    <h1 data-aos="fade-down">
+      <i class="fas fa-cloud-upload-alt"></i> 临时云存储
+    </h1>
     
-    <div class="card">
-      <h2>Upload File</h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="100">
+      <h2><i class="fas fa-upload"></i> 上传文件</h2>
       <form id="uploadForm">
         <div class="form-group">
-          <label for="adminKey">Admin Key:</label>
-          <input type="password" id="adminKey" name="adminKey" required>
+          <label for="adminKey">管理员密钥:</label>
+          <input type="password" id="adminKey" name="adminKey" placeholder="请输入管理员密钥" required>
         </div>
         
         <div class="form-group">
-          <label for="file">File:</label>
-          <input type="file" id="file" name="file" required>
+          <label for="file">文件:</label>
+          <div id="fileDropArea" class="file-drop-area">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>拖拽文件到这里上传</p>
+            <small>或点击选择文件</small>
+            <input type="file" id="file" name="file" class="file-input" required>
+          </div>
+          <div id="fileNameDisplay" class="file-name-display hidden"></div>
         </div>
         
         <div class="form-group">
-          <label for="expiryHours">Expiry time (hours):</label>
-          <input type="number" id="expiryHours" name="expiryHours" value="24" min="1" max="168">
+          <label for="expiryHours">过期时间:</label>
+          <div class="slider-container">
+            <input type="range" id="expirySlider" class="range-slider" min="1" max="168" value="24">
+            <div id="expiryDisplay" class="expiry-display">24 小时</div>
+          </div>
+          <input type="number" id="expiryHours" name="expiryHours" value="24" min="1" max="168" hidden>
         </div>
         
-        <button type="submit">Upload</button>
+        <button type="submit"><i class="fas fa-paper-plane"></i> 上传</button>
       </form>
+      
+      <div id="progressContainer" class="progress-container hidden">
+        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressText" class="progress-text">0%</div>
+      </div>
+      
       <div id="uploadResult" class="result hidden"></div>
     </div>
     
-    <div class="card">
-      <h2>Download File</h2>
+    <div class="card" data-aos="fade-up" data-aos-delay="200">
+      <h2><i class="fas fa-download"></i> 下载文件</h2>
       <form id="downloadForm">
         <div class="form-group">
-          <label for="accessCode">Access Code:</label>
-          <input type="text" id="accessCode" name="accessCode" required>
+          <label for="accessCode">访问码:</label>
+          <input type="text" id="accessCode" name="accessCode" placeholder="请输入访问码" required>
         </div>
         
-        <button type="submit">Check File</button>
+        <button type="submit"><i class="fas fa-search"></i> 查询文件</button>
       </form>
       <div id="fileInfo" class="result hidden"></div>
     </div>
   </div>
   
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
   <script src="/script.js"></script>
 </body>
 </html>
