@@ -1,4 +1,4 @@
-# SQL-cloud
+# SQL-Cloud
 ### 环境变量
 
 1. `DATABASE_URL`  Your neon.tech PostgreSQL connection string
