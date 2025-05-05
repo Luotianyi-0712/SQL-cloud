@@ -1,0 +1,27 @@
+{
+    "name": "temp-cloud-drive",
+    "version": "1.0.0",
+    "description": "Simple temporary cloud drive using PostgreSQL",
+    "main": "src/index.js",
+    "scripts": {
+      "start": "node src/index.js",
+      "dev": "nodemon src/index.js"
+    },
+    "dependencies": {
+      "cors": "^2.8.5",
+      "dotenv": "^16.0.0",
+      "express": "^4.17.3",
+      "express-fileupload": "^1.3.1",
+      "multer": "^1.4.4",
+      "nanoid": "^3.3.2",
+      "pg": "^8.7.3",
+      "pg-cursor": "^2.7.1"
+    },
+    "devDependencies": {
+      "nodemon": "^2.0.15"
+    },
+    "engines": {
+      "node": ">=14.0.0"
+    }
+  }
+  

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temporary Cloud Drive</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Temporary Cloud Drive</h1>
+    
+    <div class="card">
+      <h2>Upload File</h2>
+      <form id="uploadForm">
+        <div class="form-group">
+          <label for="adminKey">Admin Key:</label>
+          <input type="password" id="adminKey" name="adminKey" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="file">File:</label>
+          <input type="file" id="file" name="file" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="expiryHours">Expiry time (hours):</label>
+          <input type="number" id="expiryHours" name="expiryHours" value="24" min="1" max="168">
+        </div>
+        
+        <button type="submit">Upload</button>
+      </form>
+      <div id="uploadResult" class="result hidden"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Download File</h2>
+      <form id="downloadForm">
+        <div class="form-group">
+          <label for="accessCode">Access Code:</label>
+          <input type="text" id="accessCode" name="accessCode" required>
+        </div>
+        
+        <button type="submit">Check File</button>
+      </form>
+      <div id="fileInfo" class="result hidden"></div>
+    </div>
+  </div>
+  
+  <script src="/script.js"></script>
+</body>
+</html>
