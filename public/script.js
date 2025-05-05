@@ -348,30 +348,56 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // 通知函数
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    
-    // 显示通知
-    setTimeout(() => {
-      notification.classList.add('show');
-    }, 10);
-    
-    // 3秒后隐藏通知
-    setTimeout(() => {
-      notification.classList.remove('show');
-      
-      // 动画结束后移除元素
-      notification.addEventListener('transitionend', function() {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      });
-    }, 3000);
+function showNotification(message, type = 'info') {
+  // 创建 toast 元素
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  // 创建 toast 内容
+  const toastContent = document.createElement('div');
+  toastContent.className = 'toast-content';
+  
+  // 添加图标
+  const icon = document.createElement('i');
+  if (type === 'success') {
+    icon.className = 'fas fa-check-circle';
+  } else if (type === 'error') {
+    icon.className = 'fas fa-exclamation-circle';
+  } else if (type === 'warning') {
+    icon.className = 'fas fa-exclamation-triangle';
+  } else {
+    icon.className = 'fas fa-info-circle';
   }
+  
+  // 添加消息文本
+  const messageText = document.createElement('span');
+  messageText.textContent = message;
+  
+  // 组装 toast
+  toastContent.appendChild(icon);
+  toastContent.appendChild(messageText);
+  toast.appendChild(toastContent);
+  
+  // 添加到页面
+  document.body.appendChild(toast);
+  
+  // 显示 toast
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  // 3秒后隐藏 toast
+  setTimeout(() => {
+    toast.classList.remove('show');
+    
+    // 动画结束后移除元素
+    toast.addEventListener('transitionend', function() {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    });
+  }, 3000);
+}
   
   // 检查URL中是否有访问码参数
   const urlParams = new URLSearchParams(window.location.search);
