@@ -122,9 +122,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
       fileNameDisplay.textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
+      fileNameDisplay.classList.remove('hidden');
       fileDropArea.classList.add('file-selected');
     } else {
-      fileNameDisplay.textContent = '拖放文件到这里或点击选择';
+      fileNameDisplay.textContent = '';
+      fileNameDisplay.classList.add('hidden');
       fileDropArea.classList.remove('file-selected');
     }
   }
@@ -143,8 +145,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // 格式化日期时间
   function formatDateTime(dateString) {
     if (!dateString) return '永久有效';
-
-
 
     const date = new Date(dateString);
     return date.toLocaleString('zh-CN', {
@@ -165,28 +165,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!fileInput.files.length) {
       showNotification('请选择要上传的文件', 'error');
       return;
-
-
-
-
-
-
-
-
-
-
-
     }
 
     if (!adminKeyInput.value.trim()) {
       showNotification('请输入管理员密钥', 'error');
       return;
-
-
-
-
-
-
     }
 
     const file = fileInput.files[0];
@@ -196,10 +179,10 @@ document.addEventListener('DOMContentLoaded', function() {
     formData.append('adminKey', adminKeyInput.value.trim());
     
     // 显示进度条
-    progressContainer.style.display = 'block';
+    progressContainer.classList.remove('hidden');
     progressBar.style.width = '0%';
     progressText.textContent = '0%';
-    uploadResult.style.display = 'none';
+    uploadResult.classList.add('hidden');
     
     try {
       const xhr = new XMLHttpRequest();
@@ -217,14 +200,43 @@ document.addEventListener('DOMContentLoaded', function() {
           const response = JSON.parse(xhr.responseText);
           
           // 显示上传结果
-          uploadResult.style.display = 'block';
-          document.getElementById('accessCode').textContent = response.accessCode;
-          document.getElementById('accessLink').value = `${window.location.origin}/download/${response.accessCode}`;
-          document.getElementById('expiryDate').textContent = formatDateTime(response.expiryDate);
+          uploadResult.innerHTML = `
+            <div class="success-animation">
+              <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>
+            </div>
+            <h3>文件上传成功！</h3>
+            <div class="info-item">
+              <span class="info-label">访问码:</span>
+              <div class="code-container">
+                <span class="access-code" id="accessCodeDisplay">${response.accessCode}</span>
+                <button class="copy-btn" data-clipboard-text="${response.accessCode}">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+            <div class="info-item">
+              <span class="info-label">访问链接:</span>
+              <div class="code-container">
+                <input type="text" id="accessLinkInput" value="${window.location.origin}/api/file/${response.accessCode}" readonly>
+                <button class="copy-btn" data-clipboard-text="${window.location.origin}/api/file/${response.accessCode}">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+            <div class="info-item">
+              <span class="info-label">过期时间:</span>
+              <span>${formatDateTime(response.expiryDate)}</span>
+            </div>
+          `;
+          uploadResult.classList.remove('hidden');
           
           // 重置表单
           uploadForm.reset();
-          fileNameDisplay.textContent = '拖放文件到这里或点击选择';
+          fileNameDisplay.textContent = '';
+          fileNameDisplay.classList.add('hidden');
           fileDropArea.classList.remove('file-selected');
           
           showNotification('文件上传成功！', 'success');
@@ -241,18 +253,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 隐藏进度条
         setTimeout(() => {
-          progressContainer.style.display = 'none';
+          progressContainer.classList.add('hidden');
         }, 1000);
       });
       
       xhr.addEventListener('error', function() {
         showNotification('网络错误，上传失败', 'error');
-        progressContainer.style.display = 'none';
+        progressContainer.classList.add('hidden');
       });
       
       xhr.addEventListener('abort', function() {
         showNotification('上传已取消', 'warning');
-        progressContainer.style.display = 'none';
+        progressContainer.classList.add('hidden');
       });
       
       xhr.open('POST', '/api/upload');
@@ -260,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       console.error('Upload error:', error);
       showNotification('上传过程中发生错误', 'error');
-      progressContainer.style.display = 'none';
+      progressContainer.classList.add('hidden');
     }
   });
   
@@ -268,32 +280,44 @@ document.addEventListener('DOMContentLoaded', function() {
   downloadForm.addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const accessCode = document.getElementById('accessCodeInput').value.trim();
+    const accessCode = document.getElementById('accessCode').value.trim();
     
     if (!accessCode) {
       showNotification('请输入访问码', 'error');
       return;
-
-
-
-
-
-
-
     }
 
     try {
-      const response = await fetch(`/api/files/${accessCode}`);
+      const response = await fetch(`/api/file/info/${accessCode}`);
       
       if (response.ok) {
         const fileData = await response.json();
 
         // 显示文件信息
-        fileInfo.style.display = 'block';
-        document.getElementById('fileName').textContent = fileData.filename;
-        document.getElementById('fileSize').textContent = formatFileSize(fileData.filesize);
-        document.getElementById('fileExpiry').textContent = formatDateTime(fileData.expires_at);
-        document.getElementById('downloadLink').href = `/api/download/${accessCode}`;
+        fileInfo.innerHTML = `
+          <div class="file-info-container">
+            <div class="file-icon">
+              <i class="fas fa-file"></i>
+            </div>
+            <div class="file-details">
+              <h3>${fileData.filename}</h3>
+              <div class="file-meta">
+                <div class="meta-item">
+                  <i class="fas fa-weight"></i>
+                  <span>${formatFileSize(fileData.filesize)}</span>
+                </div>
+                <div class="meta-item">
+                  <i class="fas fa-clock"></i>
+                  <span>${formatDateTime(fileData.expiresAt)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <a href="/api/file/${accessCode}" class="download-btn">
+            <i class="fas fa-download"></i> 下载文件
+          </a>
+        `;
+        fileInfo.classList.remove('hidden');
 
         showNotification('文件信息获取成功！', 'success');
       } else {
@@ -303,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
           errorMessage = errorData.message || errorMessage;
         } catch (e) {
           console.error('Error parsing error response:', e);
-
         }
         showNotification(errorMessage, 'error');
       }
@@ -355,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const accessCodeParam = urlParams.get('code');
   
   if (accessCodeParam) {
-    document.getElementById('accessCodeInput').value = accessCodeParam;
+    document.getElementById('accessCode').value = accessCodeParam;
     // 自动触发下载表单提交
     downloadForm.dispatchEvent(new Event('submit'));
 
@@ -387,7 +410,6 @@ document.addEventListener('DOMContentLoaded', function() {
       themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
     } else {
       themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-
     }
   }
 });
