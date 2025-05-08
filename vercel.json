@@ -23,6 +23,15 @@
         "src": "/",
         "dest": "public/index.html"
       }
-    ]
+    ],
+    "functions": {
+      "src/index.js": {
+        "memory": 1024,
+        "maxDuration": 60,
+        "bodyParser": {
+          "sizeLimit": "1024mb"
+        }
+      }
+    }
   }
   
